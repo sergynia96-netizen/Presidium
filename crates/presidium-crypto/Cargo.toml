@@ -5,11 +5,17 @@ edition = "2021"
 description = "Signal Protocol primitives for Presidium"
 
 [dependencies]
-# Пока без зависимостей
+# Пока без зависимостей, кроме тестовых утилит
+proptest = { version = "1", optional = true }
 
 [dev-dependencies]
 proptest = "1"
 criterion = { version = "0.5", features = ["html_reports"] }
+
+[features]
+default = []
+# Включает property-тесты в runtime (по умолчанию только dev-dependencies)
+test-utils = ["proptest"]
 
 [[bench]]
 name = "crypto_bench"
