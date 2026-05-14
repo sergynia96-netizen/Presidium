@@ -1,0 +1,16 @@
+[package]
+name = "presidium-crypto"
+version = "0.1.0"
+edition = "2021"
+description = "Signal Protocol primitives for Presidium"
+
+[dependencies]
+# Пока без зависимостей
+
+[dev-dependencies]
+proptest = "1"
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[[bench]]
+name = "crypto_bench"
+harness = false
