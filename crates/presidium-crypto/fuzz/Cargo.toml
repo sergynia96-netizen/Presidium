@@ -4,6 +4,9 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
+# Opt out of the root workspace — fuzz crates need separate Cargo metadata
+[workspace]
+
 [package.metadata]
 cargo-fuzz = true
 
@@ -14,5 +17,5 @@ libfuzzer-sys = "0.4"
 path = ".."
 
 [[bin]]
-name = "dummy"
-path = "fuzz_targets/dummy.rs"
+name = "did_parsing"
+path = "fuzz_targets/did_parsing.rs"

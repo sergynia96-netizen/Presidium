@@ -2,11 +2,16 @@
 name = "presidium-crypto"
 version = "0.1.0"
 edition = "2021"
-description = "Signal Protocol primitives for Presidium"
+description = "Cryptographic primitives for Presidium messenger"
+license = "MIT"
 
 [dependencies]
-# Пока без зависимостей, кроме тестовых утилит
-proptest = { version = "1", optional = true }
+ed25519-dalek = "2"
+bip39 = { version = "2", features = ["rand"] }
+bs58 = "0.5"
+thiserror = "1"
+rand = "0.8"
+getrandom = { version = "0.2", features = ["js"] }
 
 [dev-dependencies]
 proptest = "1"
@@ -14,8 +19,6 @@ criterion = { version = "0.5", features = ["html_reports"] }
 
 [features]
 default = []
-# Включает property-тесты в runtime (по умолчанию только dev-dependencies)
-test-utils = ["proptest"]
 
 [[bench]]
 name = "crypto_bench"

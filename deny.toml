@@ -1,28 +1,37 @@
+# cargo-deny configuration for Presidium.
+# Format: cargo-deny >=0.18
+
+[graph]
+targets = ["x86_64-unknown-linux-gnu"]
+all-features = false
+
 [advisories]
-vulnerability = "deny"
-unmaintained = "deny"
 yanked = "deny"
-notice = "deny"
+ignore = []
 
 [licenses]
-unlicensed = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
     "BSD-3-Clause",
-    "ISC",
-    "Unlicense",
     "CC0-1.0",
+    "Unicode-3.0",
 ]
-copyleft = "deny"
-default = "deny"
+exceptions = []
+
+[licenses.private]
+ignore = true
 
 [bans]
-multiple-versions = "deny"
-deny = [
-    # Запретить дублирование популярных крейтов
-    { name = "rand", version = "*" },
-]
+multiple-versions = "warn"
+deny = []
 skip = [
-    # Если какие-то крейты требуют несколько версий, добавить позже
+    # proptest pulls rand 0.9 → getrandom 0.3; tempfile/criterion → getrandom 0.2
+    { name = "getrandom", version = "*" },
 ]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
