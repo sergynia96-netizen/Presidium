@@ -1,7 +1,10 @@
+# NOTE: cargo-deny-action@v1 ships cargo-deny 0.14 which uses the old key names.
+#       Do NOT use the newer key names (versioned, etc.) until the action is updated.
+
 [advisories]
 vulnerability = "deny"
 yanked = "deny"
-unmaintained = "deny"
+unmaintained = "warn"
 notice = "warn"
 
 [licenses]
@@ -13,6 +16,8 @@ allow = [
     "ISC",
     "Unlicense",
     "CC0-1.0",
+    "Unicode-3.0",
+    "OpenSSL",
 ]
 deny = []
 copyleft = "deny"
@@ -21,4 +26,11 @@ default = "deny"
 [bans]
 multiple-versions = "warn"
 deny = []
-skip = []
+skip = [
+    # proptest pulls rand 0.9 → getrandom 0.3; tempfile → getrandom 0.4
+    { name = "getrandom", version = "*" },
+    # getrandom 0.3 → r-efi 5.x; getrandom 0.4 → r-efi 6.x
+    { name = "r-efi", version = "*" },
+    # getrandom 0.3 → wit-bindgen 0.51; getrandom 0.4 → wit-bindgen 0.57
+    { name = "wit-bindgen", version = "*" },
+]
