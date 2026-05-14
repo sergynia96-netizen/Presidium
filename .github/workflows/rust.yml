@@ -73,7 +73,7 @@ jobs:
         run: cargo +nightly fuzz build --fuzz-dir crates/presidium-crypto/fuzz
       - name: Quick fuzz check (5 sec per target)
         run: |
-          for target in did_parsing; do
+          for target in did_parsing vault_decrypt; do
             timeout 5 cargo +nightly fuzz run "$target" --fuzz-dir crates/presidium-crypto/fuzz || true
           done
 

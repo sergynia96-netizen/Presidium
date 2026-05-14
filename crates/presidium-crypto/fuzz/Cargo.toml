@@ -19,3 +19,7 @@ path = ".."
 [[bin]]
 name = "did_parsing"
 path = "fuzz_targets/did_parsing.rs"
+
+[[bin]]
+name = "vault_decrypt"
+path = "fuzz_targets/vault_decrypt.rs"
