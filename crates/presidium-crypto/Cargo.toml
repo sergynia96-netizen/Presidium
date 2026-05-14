@@ -6,7 +6,7 @@ description = "Cryptographic primitives for Presidium messenger"
 license = "MIT"
 
 [dependencies]
-ed25519-dalek = "2"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
 bip39 = { version = "2", features = ["rand"] }
 bs58 = "0.5"
 thiserror = "1"
@@ -15,6 +15,11 @@ getrandom = { version = "0.2", features = ["js"] }
 argon2 = { version = "0.5", features = ["std"] }
 chacha20poly1305 = { version = "0.10", features = ["std"] }
 zeroize = { version = "1", features = ["zeroize_derive"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+curve25519-dalek = { version = "4", features = ["digest"] }
+hkdf = "0.12"
+sha2 = "0.10"
+hmac = "0.12"
 
 [dev-dependencies]
 proptest = "1"

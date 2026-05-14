@@ -23,3 +23,7 @@ path = "fuzz_targets/did_parsing.rs"
 [[bin]]
 name = "vault_decrypt"
 path = "fuzz_targets/vault_decrypt.rs"
+
+[[bin]]
+name = "x3dh_initiate"
+path = "fuzz_targets/x3dh_initiate.rs"
