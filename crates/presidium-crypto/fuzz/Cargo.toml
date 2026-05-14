@@ -16,3 +16,7 @@ path = ".."
 [[bin]]
 name = "dummy"
 path = "fuzz_targets/dummy.rs"
+
+[[bin]]
+name = "did_parsing"
+path = "fuzz_targets/did_parsing.rs"

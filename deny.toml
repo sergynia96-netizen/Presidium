@@ -19,10 +19,7 @@ default = "deny"
 
 [bans]
 multiple-versions = "deny"
-deny = [
-    # Запретить дублирование популярных крейтов
-    { name = "rand", version = "*" },
-]
+deny = []
 skip = [
-    # Если какие-то крейты требуют несколько версий, добавить позже
+    # If any crates require multiple versions, add them here
 ]
