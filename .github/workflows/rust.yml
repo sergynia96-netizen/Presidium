@@ -70,14 +70,11 @@ jobs:
       - name: Install cargo-fuzz
         run: cargo install cargo-fuzz
       - name: Build fuzz targets
-        run: |
-          for target in $(ls crates/presidium-crypto/fuzz/fuzz_targets/*.rs); do
-            cargo fuzz build --fuzz-dir crates/presidium-crypto/fuzz
-          done
+        run: cargo +nightly fuzz build --fuzz-dir crates/presidium-crypto/fuzz
       - name: Quick fuzz check (5 sec per target)
         run: |
-          for target in dummy; do
-            timeout 5 cargo fuzz run $target --fuzz-dir crates/presidium-crypto/fuzz || true
+          for target in dummy did_parsing; do
+            timeout 5 cargo +nightly fuzz run "$target" --fuzz-dir crates/presidium-crypto/fuzz || true
           done
 
   bench:
