@@ -4,6 +4,9 @@ version = "0.0.0"
 edition = "2021"
 publish = false
 
+# Opt out of the workspace — fuzz crates need a separate Cargo metadata
+[workspace]
+
 [package.metadata]
 cargo-fuzz = true
 

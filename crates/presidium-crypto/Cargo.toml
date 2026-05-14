@@ -3,6 +3,7 @@ name = "presidium-crypto"
 version = "0.1.0"
 edition = "2021"
 description = "Signal Protocol primitives for Presidium"
+license = "MIT"
 
 [dependencies]
 ed25519-dalek = "2"

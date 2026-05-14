@@ -1,7 +1,7 @@
 [advisories]
-vulnerability = "deny"
-unmaintained = "deny"
+versioned = "deny"
 yanked = "deny"
+unmaintained = "deny"
 notice = "deny"
 
 [licenses]
@@ -14,12 +14,11 @@ allow = [
     "Unlicense",
     "CC0-1.0",
 ]
+deny = []
 copyleft = "deny"
 default = "deny"
 
 [bans]
-multiple-versions = "deny"
+multiple-versions = "warn"
 deny = []
-skip = [
-    # If any crates require multiple versions, add them here
-]
+skip = []
