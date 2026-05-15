@@ -4,3 +4,4 @@
 
 pub mod identity;
 pub mod vault;
+pub mod x3dh;

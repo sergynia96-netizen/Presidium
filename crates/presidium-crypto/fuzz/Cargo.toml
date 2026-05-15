@@ -12,6 +12,8 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
 
 [dependencies.presidium-crypto]
 path = ".."
@@ -23,3 +25,7 @@ path = "fuzz_targets/did_parsing.rs"
 [[bin]]
 name = "vault_decrypt"
 path = "fuzz_targets/vault_decrypt.rs"
+
+[[bin]]
+name = "x3dh_initiate"
+path = "fuzz_targets/x3dh_initiate.rs"
