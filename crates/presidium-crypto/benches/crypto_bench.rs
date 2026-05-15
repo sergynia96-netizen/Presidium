@@ -8,6 +8,7 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use ed25519_dalek::SigningKey;
 use presidium_crypto::identity::Identity;
+use presidium_crypto::ratchet::RatchetState;
 use presidium_crypto::vault::{decrypt, encrypt};
 use presidium_crypto::x3dh::{
     ed25519_public_to_x25519, initiate, respond, OneTimePreKey, PreKeyBundle, SignedPreKey,
@@ -173,6 +174,61 @@ fn bench_ed25519_to_x25519(c: &mut Criterion) {
     });
 }
 
+/// Benchmark: Double Ratchet encrypt step.
+fn bench_ratchet_encrypt(c: &mut Criterion) {
+    let shared = [0u8; 32];
+    let a_sec = X25519StaticSecret::random_from_rng(OsRng);
+    let b_sec = X25519StaticSecret::random_from_rng(OsRng);
+    let b_pub = X25519PublicKey::from(&b_sec);
+    let mut state = RatchetState::new(shared, true, a_sec, b_pub);
+
+    // Warm up: first encrypt triggers the initial DH ratchet
+    let _ = state.encrypt(b"warmup");
+
+    c.bench_function("ratchet encrypt", |b| {
+        b.iter(|| state.encrypt(black_box(b"benchmark message")))
+    });
+}
+
+/// Benchmark: Double Ratchet decrypt step (after DH ratchet).
+fn bench_ratchet_decrypt(c: &mut Criterion) {
+    let shared = [0u8; 32];
+    let a_sec = X25519StaticSecret::random_from_rng(OsRng);
+    let a_pub = X25519PublicKey::from(&a_sec);
+    let b_sec = X25519StaticSecret::random_from_rng(OsRng);
+    let b_pub = X25519PublicKey::from(&b_sec);
+
+    let mut alice = RatchetState::new(shared, true, a_sec, b_pub);
+    let mut bob = RatchetState::new(shared, false, b_sec, a_pub);
+
+    c.bench_function("ratchet decrypt", |b| {
+        b.iter(|| {
+            // Need a fresh message each time since decrypt advances the chain
+            let fresh = alice.encrypt(black_box(b"benchmark message")).unwrap();
+            let _ = bob.decrypt(&fresh).unwrap();
+        });
+    });
+}
+
+/// Benchmark: Double Ratchet full DH ratchet + encrypt.
+fn bench_ratchet_dh_step(c: &mut Criterion) {
+    c.bench_function("ratchet dh ratchet + encrypt", |b| {
+        b.iter(|| {
+            let shared = [0u8; 32];
+            let a_sec = X25519StaticSecret::random_from_rng(OsRng);
+            let a_pub = X25519PublicKey::from(&a_sec);
+            let b_sec = X25519StaticSecret::random_from_rng(OsRng);
+            let b_pub = X25519PublicKey::from(&b_sec);
+            let mut alice = RatchetState::new(shared, true, a_sec, b_pub);
+            let mut bob = RatchetState::new(shared, false, b_sec, a_pub);
+
+            let enc = alice.encrypt(black_box(b"test")).unwrap();
+            let dec = bob.decrypt(&enc).unwrap();
+            black_box(dec);
+        });
+    });
+}
+
 criterion_group!(
     benches,
     bench_identity_generate,
@@ -184,5 +240,8 @@ criterion_group!(
     bench_x3dh_respond,
     bench_x3dh_initiate_no_opk,
     bench_ed25519_to_x25519,
+    bench_ratchet_encrypt,
+    bench_ratchet_decrypt,
+    bench_ratchet_dh_step
 );
 criterion_main!(benches);
