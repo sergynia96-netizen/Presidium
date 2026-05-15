@@ -194,12 +194,12 @@ fn bench_ratchet_encrypt(c: &mut Criterion) {
 fn bench_ratchet_decrypt(c: &mut Criterion) {
     let shared = [0u8; 32];
     let a_sec = X25519StaticSecret::random_from_rng(OsRng);
-    let _a_pub = X25519PublicKey::from(&a_sec);
+    let a_pub = X25519PublicKey::from(&a_sec);
     let b_sec = X25519StaticSecret::random_from_rng(OsRng);
     let b_pub = X25519PublicKey::from(&b_sec);
 
     let mut alice = RatchetState::new(shared, true, a_sec, b_pub);
-    let mut bob = RatchetState::new(shared, false, b_sec, _a_pub);
+    let mut bob = RatchetState::new(shared, false, b_sec, a_pub);
 
     c.bench_function("ratchet decrypt", |b| {
         b.iter(|| {

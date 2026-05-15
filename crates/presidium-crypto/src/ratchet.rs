@@ -41,10 +41,8 @@
 //!
 //! [Double Ratchet]: https://signal.org/docs/specifications/doubleratchet/
 
-use chacha20poly1305::{
-    aead::{Aead, KeyInit},
-    ChaCha20Poly1305, Nonce,
-};
+use chacha20poly1305::aead::{Aead, KeyInit, Payload};
+use chacha20poly1305::{ChaCha20Poly1305, Nonce};
 use hkdf::Hkdf;
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
@@ -190,20 +188,28 @@ impl RatchetState {
         let msg_number = self.send_message_number;
         self.send_message_number += 1;
 
-        let nonce = Self::make_nonce(msg_number);
-
-        let cipher = ChaCha20Poly1305::new_from_slice(&msg_key)
-            .map_err(|_| RatchetError::EncryptionError)?;
-        let ct = cipher
-            .encrypt(&nonce, plaintext)
-            .map_err(|_| RatchetError::EncryptionError)?;
-
-        // Header: our current ratchet public key (32 bytes) + message number (4 bytes)
+        // Build header before encryption so it can be used as AEAD AAD.
+        // This cryptographically binds the header (ratchet key + counter)
+        // to the ciphertext, preventing undetected header tampering.
         let mut header = Vec::with_capacity(36);
         if let Some(ref key) = self.send_ratchet_key {
             header.extend_from_slice(X25519PublicKey::from(key).as_bytes());
         }
         header.extend_from_slice(&msg_number.to_le_bytes());
+
+        let nonce = Self::make_nonce(msg_number);
+
+        let cipher = ChaCha20Poly1305::new_from_slice(&msg_key)
+            .map_err(|_| RatchetError::EncryptionError)?;
+        let ct = cipher
+            .encrypt(
+                &nonce,
+                Payload {
+                    msg: plaintext,
+                    aad: &header,
+                },
+            )
+            .map_err(|_| RatchetError::EncryptionError)?;
 
         Ok(RatchetMessage {
             header,
@@ -250,20 +256,29 @@ impl RatchetState {
             self.dh_ratchet(&their_ratchet_key)?;
         }
 
-        // Advance the receiving chain
+        // Advance the receiving chain — but do NOT commit until decrypt succeeds.
+        // A corrupted/tampered packet must not permanently desynchronize the session.
         let chain = self
             .receiving_chain
             .as_mut()
             .ok_or(RatchetError::DecryptionError)?;
         let (msg_key, next_chain) = chain.step()?;
-        *chain = next_chain;
 
         let nonce = Self::make_nonce(msg_number);
         let cipher = ChaCha20Poly1305::new_from_slice(&msg_key)
             .map_err(|_| RatchetError::DecryptionError)?;
         let plaintext = cipher
-            .decrypt(&nonce, message.ciphertext.as_slice())
+            .decrypt(
+                &nonce,
+                Payload {
+                    msg: message.ciphertext.as_slice(),
+                    aad: &message.header,
+                },
+            )
             .map_err(|_| RatchetError::DecryptionError)?;
+
+        // Only commit the chain advance after successful AEAD authentication.
+        *chain = next_chain;
 
         self.recv_message_number = msg_number + 1;
 
@@ -507,6 +522,29 @@ mod tests {
     }
 
     #[test]
+    fn tampered_header_fails() {
+        let (mut alice, mut bob) = init_pair();
+        let mut enc = alice.encrypt(b"secret").unwrap();
+        // Flip a byte in the ratchet key portion of the header
+        if !enc.header.is_empty() {
+            enc.header[0] ^= 0xFF;
+        }
+        let result = bob.decrypt(&enc);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn tampered_counter_fails() {
+        let (mut alice, mut bob) = init_pair();
+        let mut enc = alice.encrypt(b"secret").unwrap();
+        // Modify the message counter in the header
+        let counter_offset = 32; // ratchet key is first 32 bytes
+        enc.header[counter_offset] ^= 0x01;
+        let result = bob.decrypt(&enc);
+        assert!(result.is_err());
+    }
+
+    #[test]
     fn too_short_header_fails() {
         let (mut alice, _bob) = init_pair();
         let short_msg = RatchetMessage {
@@ -515,5 +553,38 @@ mod tests {
         };
         let result = alice.decrypt(&short_msg);
         assert!(result.is_err());
+    }
+
+    /// Verify that a failed decrypt does NOT advance the receiving chain.
+    /// A corrupted ciphertext must not permanently desynchronize the session.
+    #[test]
+    fn failed_decrypt_does_not_advance_chain() {
+        let (mut alice, mut bob) = init_pair();
+
+        // Alice sends two messages in sequence
+        let msg1 = alice.encrypt(b"msg1").unwrap();
+        let msg2 = alice.encrypt(b"msg2").unwrap();
+
+        // Construct a tampered message: same header, corrupted ciphertext.
+        // The header is used as AAD, so the tampered ciphertext is rejected
+        // by AEAD authentication — but the chain key must NOT be advanced.
+        let tampered_msg = RatchetMessage {
+            header: msg1.header.clone(),
+            ciphertext: {
+                let mut ct = msg1.ciphertext.clone();
+                ct[0] ^= 0xFF; // flip a byte
+                ct
+            },
+        };
+        let result = bob.decrypt(&tampered_msg);
+        assert!(result.is_err(), "tampered ciphertext must fail");
+
+        // The real msg1 must still decrypt correctly (chain was not advanced)
+        let dec1 = bob.decrypt(&msg1).unwrap();
+        assert_eq!(dec1, b"msg1");
+
+        // msg2 must also decrypt correctly
+        let dec2 = bob.decrypt(&msg2).unwrap();
+        assert_eq!(dec2, b"msg2");
     }
 }
