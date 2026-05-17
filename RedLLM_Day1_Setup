@@ -1,0 +1,216 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyMlw6iNTWeceLjxri2s0H3n",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/sergynia96-netizen/Presidium/blob/main/RedLLM_Day1_Setup\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# RedLLM - День 1: Настройка проекта и проверка окружения\n",
+        "import torch\n",
+        "import numpy as np\n",
+        "import matplotlib.pyplot as plt\n",
+        "import sys\n",
+        "\n",
+        "print(\"✅ RedLLM День 1 - Настройка\")\n",
+        "print(f\"Python version: {sys.version}\")\n",
+        "print(f\"PyTorch version: {torch.__version__}\")\n",
+        "print(f\"CUDA available: {torch.cuda.is_available()}\")\n",
+        "print(f\"GPU Name: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'No GPU'}\")\n",
+        "print(f\"NumPy version: {np.__version__}\")\n",
+        "\n",
+        "# Проверка устройства\n",
+        "device = torch.device(\"cuda\" if torch.cuda.is_available() else \"cpu\")\n",
+        "print(f\"Работаем на: {device}\")\n",
+        "\n",
+        "# Тест тензоров\n",
+        "x = torch.randn(3, 4, device=device)\n",
+        "print(f\"Тензор создан успешно: {x.shape}\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "XDj0RuE6MLGT",
+        "outputId": "e0c55e17-f4ec-4c27-d009-2c5b94926552"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "✅ RedLLM День 1 - Настройка\n",
+            "Python version: 3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]\n",
+            "PyTorch version: 2.10.0+cpu\n",
+            "CUDA available: False\n",
+            "GPU Name: No GPU\n",
+            "NumPy version: 2.0.2\n",
+            "Работаем на: cpu\n",
+            "Тензор создан успешно: torch.Size([3, 4])\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Создаём папки проекта\n",
+        "import os\n",
+        "\n",
+        "project_structure = [\n",
+        "    \"redllm\",\n",
+        "    \"redllm/layers\",\n",
+        "    \"redllm/models\",\n",
+        "    \"experiments\",\n",
+        "    \"tests\",\n",
+        "    \"api\",\n",
+        "    \"notebooks\"\n",
+        "]\n",
+        "\n",
+        "for folder in project_structure:\n",
+        "    os.makedirs(folder, exist_ok=True)\n",
+        "    with open(f\"{folder}/__init__.py\", \"w\") as f:\n",
+        "        pass  # пустой init файл\n",
+        "\n",
+        "print(\"✅ Структура проекта RedLLM создана!\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "CWVp3OdGMhDD",
+        "outputId": "f7d7acbc-6d16-4109-d613-25507c7f88bf"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "✅ Структура проекта RedLLM создана!\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Создаём requirements.txt\n",
+        "requirements = \"\"\"torch\n",
+        "torchvision\n",
+        "torchaudio\n",
+        "numpy\n",
+        "matplotlib\n",
+        "tqdm\n",
+        "wandb\n",
+        "\"\"\"\n",
+        "\n",
+        "with open(\"requirements.txt\", \"w\") as f:\n",
+        "    f.write(requirements)\n",
+        "\n",
+        "print(\"✅ requirements.txt создан\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "rgGxts4YMpq-",
+        "outputId": "56227520-d1e0-454d-b3d3-d851f23f2d20"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "✅ requirements.txt создан\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "# Создаём базовый слой (redllm/layers/linear.py)\n",
+        "code = '''import torch\n",
+        "import torch.nn as nn\n",
+        "import math\n",
+        "\n",
+        "class Linear(nn.Module):\n",
+        "    \"\"\"Собственная реализация Linear слоя\"\"\"\n",
+        "    def __init__(self, in_features: int, out_features: int, bias: bool = True):\n",
+        "        super().__init__()\n",
+        "        self.in_features = in_features\n",
+        "        self.out_features = out_features\n",
+        "\n",
+        "        self.weight = nn.Parameter(torch.empty(out_features, in_features))\n",
+        "        self.bias = nn.Parameter(torch.empty(out_features)) if bias else None\n",
+        "\n",
+        "        self.reset_parameters()\n",
+        "\n",
+        "    def reset_parameters(self):\n",
+        "        nn.init.kaiming_uniform_(self.weight, a=math.sqrt(5))\n",
+        "        if self.bias is not None:\n",
+        "            fan_in = self.weight.size(1)\n",
+        "            bound = 1 / math.sqrt(fan_in)\n",
+        "            nn.init.uniform_(self.bias, -bound, bound)\n",
+        "\n",
+        "    def forward(self, x: torch.Tensor) -> torch.Tensor:\n",
+        "        output = x @ self.weight.t()\n",
+        "        if self.bias is not None:\n",
+        "            output += self.bias\n",
+        "        return output\n",
+        "\n",
+        "    def __repr__(self):\n",
+        "        return f\"Linear(in_features={self.in_features}, out_features={self.out_features})\"\n",
+        "'''\n",
+        "\n",
+        "with open(\"redllm/layers/linear.py\", \"w\") as f:\n",
+        "    f.write(code)\n",
+        "\n",
+        "print(\"✅ Custom Linear слой создан\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "60r7ed2pMy9G",
+        "outputId": "f70f942c-9293-4e69-93d8-3711c42bc3ef"
+      },
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "✅ Custom Linear слой создан\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
